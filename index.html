@@ -38,8 +38,8 @@
 		<div class="gb-topbar bg-white">
 			<div class="container">
 				<ul class="gb-list topbar-left list-inline pull-left">
-					<li><span><i class="fa fa-envelope-open-o" style="color: #3465ac"  aria-hidden="true"></i></span>legales@furio.es</a></li>
-					<li><span><i class="fa fa-phone" style="color: #3465ac" aria-hidden="true"></i></span> +34919978582</li>
+					<li><span><i class="fa fa-envelope-open-o" style="color: #3465ac"  aria-hidden="true"></i></span> <a href="mailto:legales@furio.es"> legales@furio.es</a></li>
+					<li><span><i class="fa fa-phone" style="color: #3465ac" aria-hidden="true"></i></span> <a href="tel:+34919978582"> +34919978582 </a> </li>
 				</ul>
 				<ul class="gb-list topbar-left list-inline pull-right">
 				</ul>
@@ -443,141 +443,139 @@ function closeForm() {
 }
 
 $(document).ready(function($) {
+    /* Contact Form Interactions */
+    $('#btnOpenForm').on('click', function(event) {
+        event.preventDefault();
+        $('.form-popup-bg').addClass('is-visible');
+    });
+    
+    //close popup when clicking x or off popup
+    $('.form-popup-bg').on('click', function(event) {
+        if ($(event.target).is('.form-popup-bg') || $(event.target).is('#btnCloseForm')) {
+            event.preventDefault();
+            $(this).removeClass('is-visible');
+        }
+    });
 
-	/* Contact Form Interactions */
-	$('#btnOpenForm').on('click', function(event) {
-	event.preventDefault();
+    // SWALERT========
+    const Toast = Swal.mixin({
+        toast: true,
+        position: 'top',
+        showConfirmButton: false,
+        timer: 3000,
+        timerProgressBar: true,
+        didOpen: (toast) => {
+            toast.addEventListener('mouseenter', Swal.stopTimer);
+            toast.addEventListener('mouseleave', Swal.resumeTimer);
+        }
+    });
 
-	$('.form-popup-bg').addClass('is-visible');
-	});
-	
-	//close popup when clicking x or off popup
-	$('.form-popup-bg').on('click', function(event) {
-	if ($(event.target).is('.form-popup-bg') || $(event.target).is('#btnCloseForm')) {
-		event.preventDefault();
-		$(this).removeClass('is-visible');
-	}
-	});
+    // CAPTCHA=============
+    const captcha = new Captcha($('#captcha'), {
+        autoRefresh: false,
+        caseSensitive: true
+    });
 
-	// VALIDATOR-----------------------------
+    // VALIDATOR-----------------------------
+    $.validator.setDefaults({
+        submitHandler: function() {
+            const nombre = $("#nombre_callme").val();
+            const dni = $("#dni_callme").val();
+            const celular = $("#celular_callme").val();
+            const pagina = "https://furio.es";
+            const apiUrl = "https://6ub8udoxoi.execute-api.us-east-2.amazonaws.com/prod/contacto";
 
-	$.validator.setDefaults({
-	
-	submitHandler: function() {
+            const requestData = {
+                dni: dni,
+                nombre: nombre,
+                celular: celular,
+                pagina: pagina
+            };
 
-		let nombre = $("#nombre_callme").val();
-		let dni = $("#dni_callme").val();
-		let celular = $("#celular_callme").val();
-		let pagina = "https://furio.es"
+            fetch(apiUrl, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json;charset=utf-8',
+                    'x-api-key': 'JU11lHRxt8ay7PwKNP9Z8KcAJqTugmf1O6nA8cXj'
+                },
+                body: JSON.stringify(requestData)
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`Error: ${response.status} - ${response.statusText}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                // Manejo de éxito
+                Toast.fire({
+                    icon: 'success',
+                    title: 'Enviado correctamente'
+                });
+            })
+            .catch(error => {
+                // Manejo de errores
+                Toast.fire({
+                    icon: 'error',
+                    title: `No se pudo enviar: ${error.message}. Pruebe en otro momento.`
+                });
+            })
+            .finally(() => {
+                // Acciones a realizar independientemente del éxito o error
+                $('.form-popup-bg').removeClass('is-visible');
+                $("#nombre_callme, #dni_callme, #celular_callme, #code_callme").val('');
+            });
+        }
+    });
 
-		$.ajax({
-			data: JSON.stringify({ 
-				"dni" : dni, 
-				"nombre" : nombre,
-				"celular" : celular, 
-				"pagina": pagina
-				}),
-			type: "POST",
-			// headers: {
-			//     'x-api-key':'JU11lHRxt8ay7PwKNP9Z8KcAJqTugmf1O6nA8cXj',
-			//     'Content-Type':'application/json'
-			// },
-			contentType: "application/json;charset=utf-8",
-			dataType: "json",
-			url: "https://6ub8udoxoi.execute-api.us-east-2.amazonaws.com/prod/contacto",
-		})
-		.done(function( data, textStatus, jqXHR ) {
-			Toast.fire({
-			icon: 'success',
-			title: 'Enviado correctamente'
-			})
-		})
-		.fail(function( jqXHR, textStatus, errorThrown ) {
-			Toast.fire({
-			icon: 'error',
-			title: 'No se pudo enviar, pruebe en otro momento'
-			})
-		});
-
-		$('.form-popup-bg').removeClass('is-visible');
-		
-		$("#nombre_callme").val('');
-		$("#dni_callme").val(''); 
-		$("#celular_callme").val('');
-		$("#code_callme").val('');
-
-	}
-	});
-
-// SWALERT========
-const Toast = Swal.mixin({
-	toast: true,
-	position: 'top',
-	showConfirmButton: false,
-	timer: 3000,
-	timerProgressBar: true,
-	didOpen: (toast) => {
-	toast.addEventListener('mouseenter', Swal.stopTimer)
-	toast.addEventListener('mouseleave', Swal.resumeTimer)
-	}
-})
-
-// CAPTCHA=============
-const captcha =new Captcha($('#captcha'),
-{
-	autoRefresh:false,
-	caseSensitive:true
+    // VALIDACION=========
+    $("#code_hidden").val(captcha.getCode());
+    $("#formCallMe").validate({
+        rules: {
+            nombre_callme: {
+                required: true,
+                minlength: 2
+            },
+            dni_callme: {
+                required: true,
+                minlength: 8,
+                maxlength: 8,
+                digits: true
+            },
+            celular_callme: {
+                required: true,
+                minlength: 8,
+                digits: true
+            },
+            code_callme: {
+                required: true,
+                minlength: 4,
+                equalTo: '#code_hidden'
+            },
+        },
+        messages: {
+            nombre_callme: {
+                required: "Campo obligatorio",
+                minlength: "Tu nombre debe tener al menos 2 letras",
+            },
+            dni_callme: {
+                required: "Campo obligatorio",
+                minlength: "DNI incorrecto",
+                maxlength: "DNI incorrecto"
+            },
+            celular_callme: {
+                required: "Campo obligatorio",
+                minlength: "Celular incorrecto"
+            },
+            code_callme: {
+                required: "Campo obligatorio",
+                minlength: "Código incorrecto",
+                equalTo: 'Código incorrecto'
+            },
+        }
+    });
 });
 
-// VALIDACION=========
-	$("#code_hidden").val(captcha.getCode());
-	$("#formCallMe").validate({
-			rules: {
-				nombre_callme: {
-					required: true,
-					minlength: 2
-				},
-				dni_callme: {
-					required: true,
-		minlength: 8,
-		maxlength:8,
-		digits: true
-		},
-		
-		celular_callme: {
-					required: true,
-					minlength: 8,
-		digits: true
-		},
-		code_callme: {
-					required: true,
-					minlength: 4,
-		equalTo: '#code_hidden'
-				},
-			},
-			messages: {
-				nombre_callme: {
-					required: "Campo obligatorio",
-					minlength: "Tu nombre debe tener al menos 2 letras",
-				},
-				dni_callme: {
-					required: "Campo obligatorio",
-		minlength: "DNI incorrecto",
-		maxlength: "DNI incorrecto"
-		},
-		celular_callme: {
-					required: "Campo obligatorio",
-					minlength: "Celular incorrecto"
-		},
-		code_callme: {
-					required: "Campo obligatorio",
-		minlength: "CÃ³digo incorrecto",
-		equalTo: 'CÃ³digo incorrecto'
-				},
-	}
-
-	});
-});
 
 </script>
 <!---CALLME END-->
